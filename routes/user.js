@@ -3,6 +3,9 @@ const {
   register,
   createMasterPassword,
   sign_in,
+  verifyToken,
+  getUser,
+  checkMaster,
 } = require("../controller/authuser");
 
 const route = require("express").Router();
@@ -11,8 +14,12 @@ route.get("/hello", hello);
 
 route.post("/register", register);
 
-route.post("/create/masterpassword", createMasterPassword);
+route.post("/create/masterpassword", verifyToken, createMasterPassword);
 
-route.get("/signin", sign_in);
+route.post("/signin", sign_in);
+
+route.get("/getMyDetails", verifyToken, getUser);
+
+route.get("/check", checkMaster);
 
 module.exports = route;
