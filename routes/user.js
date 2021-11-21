@@ -20,6 +20,6 @@ route.post("/signin", sign_in);
 
 route.get("/getMyDetails", verifyToken, getUser);
 
-route.get("/check", checkMaster);
+route.post("/check", checkMaster);
 
 module.exports = route;
