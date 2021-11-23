@@ -1,32 +1,42 @@
 const db = require("../connections/connection");
 const { entrySchema } = require("../validations/validator");
 const crypto = require("crypto");
-const { compareSync } = require("bcrypt");
-const { checkMaster } = require("./authuser");
+const Encrypter = require("./Encrypter");
+require("dotenv").config();
+const Universal_encrypter = new Encrypter(
+  process.env.SECRET_KEY_FOR_ENCRYPTION,
+);
 
-function encrypt(text, master) {
-  const cipher = crypto.createCipher("aes-256-cbc", master);
-  var encrypted = cipher.update(text, "utf8", "hex");
-  encrypted = encrypted + cipher.final("hex");
-  console.log(encrypted);
-  return encrypted;
+function local_encrypter(masterPassword, url, web_username, web_password) {
+  const decrypted_password = Universal_encrypter.decrypt(masterPassword);
+  const local_encrypter = new Encrypter(decrypted_password);
+  const encrypted_url = local_encrypter.encrypt(url);
+  const encry_web_username = local_encrypter.encrypt(web_username);
+  const encry_web_password = local_encrypter.encrypt(web_password);
+  return { encrypted_url, encry_web_username, encry_web_password };
 }
 
-function decrypt(encryptedText, master) {
-  const decipher = crypto.createDecipher("aes-256-cbc", master);
-  var decrypted = decipher.update(encryptedText, "hex", "utf8");
-  decrypted = decrypted + decipher.final("utf8");
-  console.log(decrypted);
+function localDecrypter(decrypted, result) {
+  const local_encrypter = new Encrypter(decrypted);
+  let array = [];
+  result.forEach((element) => {
+    const web_password = local_encrypter.decrypt(element.user_password);
+    const web_username = local_encrypter.decrypt(element.username);
+    const url = local_encrypter.decrypt(element.url);
+    array.push({ url, web_username, web_password });
+  });
+  return array;
 }
 
 exports.createEntries = async (req, res) => {
   try {
     const { user_id, url, web_username, web_password } = req.body;
     const validate = await entrySchema.validateAsync(req.body);
+    const masterPassword = await getMyPassword(user_id);
+    console.log("master password is -> ", masterPassword);
+    const { encrypted_url, encry_web_username, encry_web_password } =
+      local_encrypter(masterPassword, url, web_username, web_password);
 
-    const encrypted_url = encrypt(url);
-    const encry_web_username = encrypt(web_username);
-    const encry_web_password = encrypt(web_password);
     db.query(
       "INSERT INTO Web_Entries VALUES(?, default, ?, ?, ?, null, default)",
       [user_id, encrypted_url, encry_web_username, encry_web_password],
@@ -45,27 +55,30 @@ exports.createEntries = async (req, res) => {
   }
 };
 
-const getMyPassword = (user_id) => {
-  let password;
-  db.query(
-    "SELECT master_password FROM users WHERE user_id = ?",
-    [user_id],
-    (err, result) => {
-      if (err) {
-      } else {
-        console.log("ohooh ", result);
-        password = JSON.parse(JSON.stringify(result));
-      }
-    },
-  );
-  return password;
-};
+function getMyPassword(user_id) {
+  return new Promise(function (resolve, reject) {
+    db.query(
+      "SELECT master_password FROM users WHERE user_id = ?",
+      [user_id],
+      function (err, rows) {
+        if (rows === undefined) {
+          reject(new Error("Error rows is undefined"));
+        } else {
+          resolve(rows[0].master_password);
+        }
+      },
+    );
+  });
+}
 
 exports.readEntries = async (req, res) => {
   try {
     const { user_id } = req.params;
-    const master_password = getMyPassword(user_id);
-    console.log("the master pass is ", getMyPassword(user_id));
+    const masterPassword = await getMyPassword(user_id);
+    console.log("master password is -> ", masterPassword);
+    const decrypted = Universal_encrypter.decrypt(masterPassword);
+    console.log("decrypted =  ", decrypted);
+
     db.query(
       "SELECT * FROM Web_Entries where user_id = ?",
       [user_id],
@@ -76,12 +89,14 @@ exports.readEntries = async (req, res) => {
           if (result.length === 0) {
             res.json("no entries for this user");
           } else {
-            res.json(result);
+            console.log("user_password is ", localDecrypter(decrypted, result));
+            res.json(localDecrypter(decrypted, result));
           }
         }
       },
     );
   } catch (error) {
+    console.log("what's the error ", error);
     res.json("error in catch");
   }
 };

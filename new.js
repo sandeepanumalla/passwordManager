@@ -83,13 +83,14 @@ function encrypt(text) {
     "aes-256-cbc",
     process.env.SECRET_KEY_FOR_ENCRYPTION,
   );
-  var encrypted = cipher.update("Hello Techweber", "utf8", "hex");
+  var encrypted = cipher.update(text, "utf8", "hex");
   encrypted = encrypted + cipher.final("hex");
-  console.log(encrypted);
+  console.log("encrpted _>>", encrypted);
   return encrypted;
 }
 
-// encrypt();
+encrypt("hello");
+encrypt("hello");
 // function decrypt() {
 //   const decipher = crypto.createDecipher(
 //     "aes-256-cbc",
@@ -102,7 +103,7 @@ function encrypt(text) {
 // }
 
 const hmac = crypto
-  .createHmac("sha256", process.env.SECRET_KEY_FOR_ENCRYPTION)
+  .createHmac("sha512", process.env.SECRET_KEY_FOR_ENCRYPTION)
   .update("hello ji")
   .digest("hex");
 

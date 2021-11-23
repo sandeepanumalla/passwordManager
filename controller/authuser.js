@@ -4,34 +4,36 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { authSchema } = require("../validations/validator");
 const crypto = require("crypto");
+const Encrypter = require("./Encrypter");
+require("dotenv").config();
+const encrypter = new Encrypter(process.env.SECRET_KEY_FOR_ENCRYPTION);
 
 async function salting(password) {
   const salt = await bcrypt.genSalt(10);
   const hashedPassword = await bcrypt.hash(password, salt);
-  console.log("hashed passwrod is ", hashedPassword);
   return hashedPassword;
 }
 
-function encrypt(text) {
-  const cipher = crypto.createCipher(
-    "aes-256-cbc",
-    process.env.SECRET_KEY_FOR_ENCRYPTION,
-  );
-  var encrypted = cipher.update(text, "utf8", "hex");
-  encrypted = encrypted + cipher.final("hex");
-  console.log(encrypted);
-  return encrypted;
-}
+// function encrypt(text) {
+//   const cipher = crypto.createCipher(
+//     "aes-256-cbc",
+//     process.env.SECRET_KEY_FOR_ENCRYPTION,
+//   );
+//   var encrypted = cipher.update(text, "utf8", "hex");
+//   encrypted = encrypted + cipher.final("hex");
+//   console.log(encrypted);
+//   return encrypted;
+// }
 
-function decrypt(encryptedText) {
-  const decipher = crypto.createDecipher(
-    "aes-256-cbc",
-    process.env.SECRET_KEY_FOR_ENCRYPTION,
-  );
-  var decrypted = decipher.update(encryptedText, "hex", "utf8");
-  decrypted = decrypted + decipher.final("utf8");
-  console.log(decrypted);
-}
+// function decrypt(encryptedText) {
+//   const decipher = crypto.createDecipher(
+//     "aes-256-cbc",
+//     process.env.SECRET_KEY_FOR_ENCRYPTION,
+//   );
+//   var decrypted = decipher.update(encryptedText, "hex", "utf8");
+//   decrypted = decrypted + decipher.final("utf8");
+//   console.log(decrypted);
+// }
 
 exports.register = async (req, res) => {
   try {
@@ -71,8 +73,8 @@ exports.register = async (req, res) => {
 exports.createMasterPassword = async (req, res) => {
   try {
     const { master_password, user_id } = req.body;
-    const encrypted = encrypt(master_password);
-    console.log("encrypted password is ", encrypt(master_password));
+    const encrypted = encrypter.encrypt(master_password);
+
     db.query(
       "UPDATE users SET master_password = ? WHERE user_id = ?",
       [encrypted, user_id],

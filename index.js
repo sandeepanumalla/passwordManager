@@ -1,4 +1,5 @@
 const express = require("express");
+const helmet = require("helmet");
 const app = express();
 const connection = require("./connections/connection");
 const user = require("./routes/user");
@@ -11,7 +12,7 @@ app.use(
     extended: false,
   }),
 );
-
+app.use(helmet());
 app.get("/", (req, res) => {
   res.send("hello rest");
 });
