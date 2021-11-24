@@ -2,7 +2,10 @@ const express = require("express");
 const db = require("../connections/connection");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const { authSchema } = require("../validations/validator");
+const {
+  authSchema,
+  masterPasswordSchema,
+} = require("../validations/validator");
 const crypto = require("crypto");
 const Encrypter = require("./Encrypter");
 require("dotenv").config();
@@ -13,27 +16,6 @@ async function salting(password) {
   const hashedPassword = await bcrypt.hash(password, salt);
   return hashedPassword;
 }
-
-// function encrypt(text) {
-//   const cipher = crypto.createCipher(
-//     "aes-256-cbc",
-//     process.env.SECRET_KEY_FOR_ENCRYPTION,
-//   );
-//   var encrypted = cipher.update(text, "utf8", "hex");
-//   encrypted = encrypted + cipher.final("hex");
-//   console.log(encrypted);
-//   return encrypted;
-// }
-
-// function decrypt(encryptedText) {
-//   const decipher = crypto.createDecipher(
-//     "aes-256-cbc",
-//     process.env.SECRET_KEY_FOR_ENCRYPTION,
-//   );
-//   var decrypted = decipher.update(encryptedText, "hex", "utf8");
-//   decrypted = decrypted + decipher.final("utf8");
-//   console.log(decrypted);
-// }
 
 exports.register = async (req, res) => {
   try {
@@ -74,7 +56,7 @@ exports.createMasterPassword = async (req, res) => {
   try {
     const { master_password, user_id } = req.body;
     const encrypted = encrypter.encrypt(master_password);
-
+    masterPasswordSchema.validateAsync(masterPasswordSchema);
     db.query(
       "UPDATE users SET master_password = ? WHERE user_id = ?",
       [encrypted, user_id],
@@ -84,6 +66,10 @@ exports.createMasterPassword = async (req, res) => {
     );
     res.json("master password successfully created");
   } catch (error) {
+    if (error.isJoi == true) {
+      error.status = 422;
+      res.status(422).json(error.details[0].message);
+    }
     console.log("error in creation of master password ", error);
     res.status(500).json(error);
   }
@@ -131,6 +117,7 @@ exports.verifyToken = async (req, res, next) => {
     if (token == null) return res.sendStatus(401);
     jwt.verify(token, process.env.SECRET, (err, user) => {
       if (err) return res.sendStatus(403);
+      console.log("req usr is ", user);
       req.user = user;
       next();
     });
@@ -142,17 +129,18 @@ exports.verifyToken = async (req, res, next) => {
 
 exports.checkMaster = async (req, res, next) => {
   try {
-    const data = req.body;
+    const data = req.params;
+    console.log("req.body ", req.params);
     const u = db.query(
       "SELECT master_password FROM users where user_id = ?",
       [data.user_id],
       (err, result) => {
         let added = JSON.parse(JSON.stringify(result));
         if (added[0].master_password === null) {
-          next();
+          res.json("please set up the master password");
         }
         console.log("result ", result);
-        return res.json("all good");
+        next();
       },
     );
     console.log("sdfsdf", u);

@@ -1,5 +1,8 @@
 const db = require("../connections/connection");
-const { entrySchema } = require("../validations/validator");
+const {
+  entrySchema,
+  updateEntriesSchema,
+} = require("../validations/validator");
 const crypto = require("crypto");
 const Encrypter = require("./Encrypter");
 require("dotenv").config();
@@ -98,6 +101,34 @@ exports.readEntries = async (req, res) => {
   } catch (error) {
     console.log("what's the error ", error);
     res.json("error in catch");
+  }
+};
+
+exports.updateEntries = async () => {
+  try {
+    const { eid } = req.params;
+    const { url, user_id } = req.body;
+
+    const decrypted_master = await getMyPassword(user_id);
+
+    updateEntriesSchema.validateAsync({ eid, url });
+    db.query(
+      "UPDATE Web_Entries set url = ? where eid = ?",
+      [eid, url],
+      (err, result) => {
+        if (err) {
+          res.json("error updating data on mysql");
+        } else {
+          res.json(result);
+        }
+      },
+    );
+  } catch (error) {
+    if (error.isJoi == true) {
+      res.json("joi error");
+    } else {
+      res.json("error in catch");
+    }
   }
 };
 
