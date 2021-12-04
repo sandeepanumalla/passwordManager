@@ -5,6 +5,7 @@ const connection = require("./connections/connection");
 const user = require("./routes/user");
 const Web_Entries = require("./routes/web_entries");
 const port = 7070;
+const Websites = require("./routes/websites");
 
 app.use(express.json());
 app.use(
@@ -16,6 +17,7 @@ app.use(helmet());
 app.get("/", (req, res) => {
   res.send("hello rest");
 });
+app.use("/cards", Websites);
 app.use("/", user);
 app.use("/entry", Web_Entries);
 

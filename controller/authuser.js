@@ -78,23 +78,31 @@ exports.createMasterPassword = async (req, res) => {
 exports.sign_in = async (req, res) => {
   try {
     const validate = await authSchema.validateAsync(req.body);
+
     const { email, password } = req.body;
     const selectedEmails = db.query(
-      "SELECT email FROM users",
+      "SELECT * FROM users where email = ?",
+      [email],
       (err, result) => {
         console.log(validate, err);
         const arr = JSON.parse(JSON.stringify(result));
-        const isValid = arr.some((e) => e.email == email);
+        const user_id = arr[0].user_id;
+        console.log("yyaha ka", arr);
         let token;
-        if (isValid) {
-          token = jwt.sign({ email, password }, process.env.SECRET, {
-            expiresIn: "2h",
-          });
-          res.json({ result, token });
-          return { token };
-        } else {
-          res.json("you have not signin using this email");
-        }
+        bcrypt.compare(password, arr[0].user_password, (err, success) => {
+          if (success == false) {
+            console.log("occured");
+            res.json("incorrect details");
+          } else if (success) {
+            console.log("success", success);
+            token = jwt.sign({ user_id, email }, process.env.SECRET, {
+              expiresIn: "2h",
+            });
+            res.json({ result, token });
+            return { token };
+          }
+          console.log("err", err, success);
+        });
       },
     );
   } catch (error) {

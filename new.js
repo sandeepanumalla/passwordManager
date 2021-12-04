@@ -108,3 +108,8 @@ const hmac = crypto
   .digest("hex");
 
 console.log("hmac  ", hmac);
+
+const webiste = require("get-website-favicon");
+webiste("facebook.com").then((data) => {
+  console.log("data", data);
+});
