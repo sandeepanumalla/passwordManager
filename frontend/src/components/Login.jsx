@@ -12,12 +12,15 @@ import {
 } from "@material-ui/core";
 import LockIcon from "@mui/icons-material/Lock";
 import MailIcon from "@mui/icons-material/Mail";
+// import undrawImage from "./undraw_sign_in_re_o58h.svg";
+
 const Login = () => {
   const paperStyle = {
     padding: 20,
     maxHeight: "70vh",
     width: 280,
     margin: "40px auto",
+    borderRadius: "25px",
   };
 
   const avatarStyle = {
@@ -25,20 +28,27 @@ const Login = () => {
   };
 
   const btnStyle = {
-    marginTop: 10,
+    margin: 10,
+    borderRadius: "25px",
+    width: 150,
   };
 
   const textfieldStyle = {
     marginTop: 10,
   };
+
+  const undrawStyle = {
+    backgroundImage: 'url("./undraw_sign_in_re_o58h.svg")',
+  };
   return (
     <>
       <Grid>
-        <Paper elevation={3} style={paperStyle}>
-          <Grid align="center">
-            <Avatar style={avatarStyle}>
+        <Paper elevation={4} style={paperStyle}>
+          <Grid align="center" style={undrawStyle}>
+            {/* <Avatar style={avatarStyle}>
               <LockIcon></LockIcon>
-            </Avatar>
+            </Avatar> */}
+            <img src="D:/password manager/frontend/src/components/undraw_sign_in_re_o58h.svg"></img>
           </Grid>
           <h2>Sign in</h2>
           <TextField
@@ -63,14 +73,16 @@ const Login = () => {
             control={<Checkbox name="checkedB" color="primary" />}
             label="Remember me"
           />
-          <Button
-            style={btnStyle}
-            variant="contained"
-            type="submit"
-            color="primary"
-            fullWidth>
-            Sign in
-          </Button>
+          <Grid>
+            <Button
+              style={btnStyle}
+              variant="contained"
+              type="submit"
+              color="primary">
+              log in
+            </Button>
+          </Grid>
+
           <Typography>
             <Link href="#">Forgot password?</Link>
           </Typography>
